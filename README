@@ -1,0 +1,7 @@
+Serverless local invoking with get parameter
+
+With data
+serverless invoke --function functionName --stage dev --region eu-west-1 --data '{ "property1": "value"}'
+
+From json file
+serverless invoke --function functionName --stage dev --region eu-west-1 --path lib/data.json
