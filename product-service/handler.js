@@ -1,7 +1,9 @@
 import { getProductsList } from './src/get-products-list.js';
-import { getProductsById } from './src/get-products-by-id.js';
+import { getProductById } from './src/get-products-by-id.js';
+import { createProduct } from './src/create-product.js';
 
 export {
-  getProductsById,
-  getProductsList
+  getProductById,
+  getProductsList,
+  createProduct
 }

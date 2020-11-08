@@ -1,4 +1,5 @@
 const path = require('path');
+const { IgnorePlugin } = require('webpack');
 // eslint-disable-next-line import/no-unresolved
 const slsw = require('serverless-webpack');
 
@@ -11,6 +12,11 @@ module.exports = {
   },
   mode: 'development',
   target: 'node',
+  plugins: [
+    new IgnorePlugin({
+        resourceRegExp: /^pg-native$/,
+    }),
+  ],  
   module: {
     rules: [
       {
