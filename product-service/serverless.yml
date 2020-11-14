@@ -15,22 +15,38 @@ provider:
   stage: dev
   region: eu-west-1
 
+  environment:
+    PG_HOST: 
+    PG_PORT: 5432
+    PG_DATABASE: 
+    PG_USERNAME: 
+    PG_PASSWORD: 
+  
 functions:
   getProductsList:
     handler: handler.getProductsList
     events:
       - http:
           method: get
-          path: productList
+          path: product
           cors: true
-  getProductsById:
-    handler: handler.getProductsById
+
+  getProductById:
+    handler: handler.getProductById
     events:
       - http:
-          path: products/{productId}
+          path: product/{productId}
           method: get
           cors: true
           request:
             parameters:
               paths:
                 productId: true
+
+  createProduct:
+    handler: handler.createProduct
+    events:
+      - http:
+          path: product
+          method: post
+          cors: true
