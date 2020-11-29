@@ -8,6 +8,7 @@ frameworkVersion: "2"
 # Add the serverless-webpack plugin
 plugins:
   - serverless-webpack
+  - serverless-dotenv-plugin
 
 provider:
   name: aws
@@ -15,13 +16,63 @@ provider:
   stage: dev
   region: eu-west-1
 
-  environment:
-    PG_HOST: 
-    PG_PORT: 5432
-    PG_DATABASE: 
-    PG_USERNAME: 
-    PG_PASSWORD: 
+  iamRoleStements:
+    - Effect: "Allow"
+      Action: "sqs:*"
+      Resource:
+        - Fn::GetAtt: [ SQSQueue, Arn ]
+    - Effect: "Allow"
+      Action: "sns:*"
+      Resource:
+        Ref: SNSTopic
   
+  environment:
+    PG_HOST: "${env:PG_HOST}"
+    PG_PORT: 5432
+    PG_DATABASE: "${env:PG_DATABASE}"
+    PG_USERNAME: "${env:PG_USERNAME}"
+    PG_PASSWORD: "${env:PG_PASSWORD}"
+
+    SNS_ARN:
+      Ref: SNSTopic
+    SQS_URL:
+      Ref: SQSQueue
+
+resources:
+  Resources:
+    SQSQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: catalogItemsQueue
+    SNSTopic:
+      Type: "AWS::SNS::Topic"
+      Properties:
+        TopicName: "createProductTopic"
+    SNSSubscription1:
+      Type: "AWS::SNS::Subscription"
+      Properties:
+        Endpoint: "${env:SNS_EMAIL}"
+        Protocol: email
+        TopicArn:
+          Ref: SNSTopic
+    SNSSubscription2:
+      Type: "AWS::SNS::Subscription"
+      Properties:
+        Endpoint: "${env:SNS_EMAIL2}"
+        Protocol: email
+        TopicArn:
+          Ref: SNSTopic
+        FilterPolicy: {"status": ["Error"]}
+  Outputs:
+    SQSQueueUrl:
+      Value:
+        Ref: SQSQueue
+    SQSQueueArn:
+      Value:
+        Fn::GetAtt:
+          - SQSQueue
+          - Arn
+
 functions:
   getProductsList:
     handler: handler.getProductsList
@@ -50,3 +101,13 @@ functions:
           path: product
           method: post
           cors: true
+
+  catalogBatchProcess:
+    handler: handler.catalogBatchProcess
+    events:
+      - sqs:
+          batchSize: 5
+          arn:
+            Fn::GetAtt:
+              - SQSQueue
+              - Arn

@@ -6,6 +6,7 @@ const BUCKET_NAME = 'upload-files-shop-aws-course';
 export const importFileParser = async (event) => {
   console.log('Start importFileParser with event: ', event);
   const s3 = new aws.S3({region: 'eu-west-1'});
+  const sqs = new aws.SQS();
 
   for (const record of event.Records) {
     try {
@@ -21,11 +22,18 @@ export const importFileParser = async (event) => {
       console.log(`Copying from ${sourceBucketPath} into ${BUCKET_NAME}/${destinationKey}`);
 
       await (new Promise((resolve, reject) => {
-        s3Stream.pipe(csv()).on('data', (data) => {
+        s3Stream.pipe(csv()).on('data', async (data) => {
           console.log('data', data);
+
+          await sqs.sendMessage({
+            QueueUrl: process.env.QueueUrl,
+            MessageBody: JSON.stringify(data)
+          }, () => {
+            console.log(`Send message for: `, data);
+          }).promise();
+
         })
         .on('end', async () => {
-          console.log('end');
           await s3.copyObject({
             Bucket: BUCKET_NAME,
             CopySource: sourceBucketPath,
