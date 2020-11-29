@@ -9,6 +9,7 @@ frameworkVersion: '2'
 plugins:
   - serverless-webpack
   - serverless-dotenv-plugin
+  - serverless-pseudo-parameters
   
 provider:
   name: aws
@@ -36,6 +37,19 @@ provider:
      Resource:
        - "${cf:product-service-${self:provider.stage}.SQSQueueArn}"
 
+resources:
+  Resources:
+    GatewayResponse4XX:
+      Type: AWS::ApiGateway::GatewayResponse
+      Properties:
+        ResponseParameters:
+          gatewayresponse.header.Access-Control-allow-Origin: "'*'"
+          gatewayresponse.header.Access-Control-allow-Methods: "'*'"
+          gatewayresponse.header.Access-Control-allow-Credentials: "'true'"
+        ResponseType: DEFAULT_4XX
+        RestApiId:
+          Ref: ApiGatewayRestApi
+
 functions:
   importProductsFile:
     handler: handler.importProductsFile
@@ -44,6 +58,10 @@ functions:
           path: import
           method: get
           cors: true
+          authorizer:
+            name: tokenAuthorizer
+            arn: "arn:aws:lambda:#{AWS::Region}:#{AWS::AccountId}:function:authorization-service-dev-basicAuthorizer"
+            type: token
           request:
             parameters:
               querystrings:
